@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<script>
+
+class Node {
+  constructor(value, left = null, right = null) {
+    this.value = value;;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+class Tree {
+  constructor(array) {
+    this.root = null;
+    this.array = array;
+  }
+  buildTree() {
+    this.array.sort((a, b) => a < b ? -1 : 1);
+    // Remove duplicates
+    this.array = [... new Set(this.array)];
+    console.log(this.array);
+    this.root = this.#buildingRecursion(this.array);
+    return this.root;
+  }
+  #buildingRecursion(subArray) {
+    const middleIndex = Math.floor(subArray.length/2);
+    const currentRoot = new Node(subArray[middleIndex]);
+    const rightHalf = subArray.splice(middleIndex + 1);
+    subArray.pop();
+    const leftHalf = subArray;
+    (leftHalf.length === 0) ? currentRoot.left = null : currentRoot.left = this.#buildingRecursion(leftHalf);
+    (rightHalf.length === 0) ? currentRoot.right = null : currentRoot.right = this.#buildingRecursion(rightHalf);
+    return currentRoot;
+  }
+}
+
+const prettyPrint = (node, prefix = '', isLeft = true) => {
+  if (node.right !== null) {
+    prettyPrint(node.right, `${prefix}${isLeft ? '│   ' : '    '}`, false);
+  }
+  console.log(`${prefix}${isLeft ? '└── ' : '┌── '}${node.value}`);
+  if (node.left !== null) {
+    prettyPrint(node.left, `${prefix}${isLeft ? '    ' : '│   '}`, true);
+  }
+}
+
+
+test = [1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324];
+t = new Tree(test);
+t.buildTree(test);
+console.log(t.root);
+prettyPrint(t.root);
+
+</script>
+</body>
+</html>
