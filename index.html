@@ -23,10 +23,10 @@ class Tree {
     this.array = array;
   }
   buildTree() {
+    if (this.array.length === 0) return "Error: The array is empty"; 
     this.array.sort((a, b) => a < b ? -1 : 1);
     // Remove duplicates
     this.array = [... new Set(this.array)];
-    console.log(this.array);
     this.root = this.#buildingRecursion(this.array);
     return this.root;
   }
@@ -40,6 +40,145 @@ class Tree {
     (rightHalf.length === 0) ? currentRoot.right = null : currentRoot.right = this.#buildingRecursion(rightHalf);
     return currentRoot;
   }
+  insert(value) {
+    let temp = this.root;
+    let prev;
+    const newNode = new Node(value);
+    if (temp === null) {
+      this.root = newNode;
+      return;
+    }
+    while (temp !== null) {
+      prev = temp;
+      if (value > temp.value) temp = temp.right;
+      else if (value < temp.value) temp = temp.left;
+      else return "Error: Duplicates are not allowed"; 
+    }
+    if (value > prev.value) prev.right = newNode;
+    else prev.left = newNode;
+  }
+  delete(value) {
+    let temp = this.root;
+    let prev;
+    while (temp !== null) {
+      if (temp.value === value) {
+        if (temp.left === null && temp.right === null) this.#deleteLeaf(prev, temp);
+        else if (temp.left !== null && temp.right !== null) {
+          let deletionNode = temp;
+          let prev = temp;
+          let prevprev;
+          let inorderSuccessor;
+          let min = temp.right.value;
+          temp = temp.right;
+          while(temp !== null) {
+            prevprev = prev;
+            if (temp.value < min) {
+              inorderSuccessor = temp;
+              min = temp.value;
+            }
+            prev = temp;
+            temp = temp.left;
+          }
+          console.log(inorderSuccessor);
+          console.log(prevprev);
+          prevprev.left = inorderSuccessor.right;
+          deletionNode.value = inorderSuccessor.value;
+        } else {
+          console.log(temp);
+          console.log(prev);
+          if (temp.left !== null) {
+            prev.left === temp ? prev.left = temp.left : prev.right = temp.left;
+          } else prev.left === temp ? prev.left = temp.right : prev.right = temp.right;
+        }
+        return;
+      }
+      prev = temp;
+      (value > temp.value) ? temp = temp.right : temp = temp.left;
+    }
+    return ("Node not found");
+    console.log(prev);
+    console.log(temp);
+  }
+  #deleteLeaf(parent, child) {
+    parent.right === child ? parent.right = null : parent.left = null;
+  }
+  find(value) {
+    let temp = this.root;
+    while (temp !== null) {
+      if (value > temp.value) temp = temp.right;
+      else if (value < temp.value) temp = temp.left;
+      else if (value === temp.value) return temp;
+    }
+    return `Value not found (${value})`;
+  }
+  breadthFirst(cb) {
+    // Breadth-first
+    let result = [];
+    const queue = [this.root];
+    while (queue.length !== 0) {
+      const next = queue.shift();
+      if (next === null) continue;
+      queue.push(next.left);
+      queue.push(next.right);
+      result.push(next);
+    }
+    if (cb === undefined) return result.map(node => node = node.value);
+    result.forEach(node => cb(node));
+    return "Success";
+  }
+  depthFirst(cb, order = "inorder") {
+    const result = [];
+    function recursion(node) {
+      if (node === null) return;
+      if (order === "preorder") result.push(node)
+      recursion(node.left);
+      if (order === "inorder") result.push(node)
+      recursion(node.right);
+      if (order === "postorder") result.push(node)
+    }
+    recursion(this.root);
+    if (cb === undefined) return result.map(node => node = node.value);
+    result.forEach(node => cb(node));
+    return "Success";
+  }
+  height(node = this.root) {
+    if (node === null) return -1;
+    const leftHeight = this.height(node.left);
+    const rightHeight = this.height(node.right);
+    return Math.max(leftHeight, rightHeight) + 1; 
+  }
+  depth(value) {
+    let steps = -1;
+    let depth = "Node not found";
+    function recursion(node) {
+      steps += 1;
+      if (node === null) return;
+      if (value === node.value) depth = steps;
+      recursion(node.left);
+      steps -= 1;
+      recursion(node.right);
+      steps -= 1;
+    }
+    recursion(this.root);
+    return depth;
+  }
+  isBalanced() {
+    let balanced = true;
+    function recursion(node) {
+      if (node === null) return 0;
+      const leftHeight = recursion(node.left);
+      const rightHeight = recursion(node.right);
+      if (Math.abs(leftHeight - rightHeight) > 1) balanced = false;
+      return Math.max(leftHeight, rightHeight) + 1;
+    }
+    recursion(this.root);
+    return balanced;
+  }
+  rebalance() {
+    if (this.isBalanced()) return "The tree is already balanced";
+    this.array = this.breadthFirst();
+    this.buildTree();
+  }
 }
 
 const prettyPrint = (node, prefix = '', isLeft = true) => {
@@ -52,12 +191,70 @@ const prettyPrint = (node, prefix = '', isLeft = true) => {
   }
 }
 
-
+/*
 test = [1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324];
 t = new Tree(test);
-t.buildTree(test);
+t.buildTree();
 console.log(t.root);
+console.log(t.insert(19));
+t.insert(7000);
+t.insert(400);
+t.insert(200);
 prettyPrint(t.root);
+t.delete(67);
+prettyPrint(t.root);
+console.log("Find value: 23");
+console.log(t.find(23));
+console.log(t.breadthFirst(function(node) {node.value = node.value * 4}));
+prettyPrint(t.root);
+console.log(t.depthFirst(function(node) {node.value = node.value / 2}, "preorder"));
+prettyPrint(t.root);
+console.log(t.height());
+console.log(t.depth(2));
+console.log(`Tree is balanced: ${t.isBalanced()}`);
+console.log("Rebalancing...");
+t.rebalance();
+prettyPrint(t.root);
+console.log(`Tree is balanced: ${t.isBalanced()}`);
+*/
+
+function driverScript() {
+  // 1
+  const array = [];
+  for (i = 0; i < 20; i++) {
+    array.push(Math.floor(Math.random()*100))
+  }
+  const t = new Tree(array);
+  t.buildTree();
+  prettyPrint(t.root);
+  // 2
+  console.log(`Tree is balanced: ${t.isBalanced()}`);
+  // 3
+  console.log(`Breadth-first: ${t.breadthFirst().reduce((accum, value) => accum += value + " ", "")}`);
+  console.log(`Depth-first (preorder): ${t.depthFirst(undefined, "preorder").reduce((accum, value) => accum += value + " ", "")}`);
+  console.log(`Depth-first (inorder): ${t.depthFirst(undefined, "inorder").reduce((accum, value) => accum += value + " ", "")}`);
+  console.log(`Depth-first (postorder): ${t.depthFirst(undefined, "postorder").reduce((accum, value) => accum += value + " ", "")}`);
+  // 4
+  console.log("Unbalancing...");
+  t.insert(101);
+  t.insert(102);
+  // 5
+  prettyPrint(t.root);
+  console.log(`Tree is balanced: ${t.isBalanced()}`);
+  // 6
+  console.log("Rebalancing...");
+  t.rebalance();
+  // 7
+  prettyPrint(t.root);
+  console.log(`Tree is balanced: ${t.isBalanced()}`);
+  // 8
+  console.log(`Breadth-first: ${t.breadthFirst().reduce((accum, value) => accum += value + " ", "")}`);
+  console.log(`Depth-first (preorder): ${t.depthFirst(undefined, "preorder").reduce((accum, value) => accum += value + " ", "")}`);
+  console.log(`Depth-first (inorder): ${t.depthFirst(undefined, "inorder").reduce((accum, value) => accum += value + " ", "")}`);
+  console.log(`Depth-first (postorder): ${t.depthFirst(undefined, "postorder").reduce((accum, value) => accum += value + " ", "")}`);
+}
+
+driverScript();
 
 </script>
 </body>
